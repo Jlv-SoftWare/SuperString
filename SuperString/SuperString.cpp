@@ -10,17 +10,17 @@ wstring SuperString::stringTowstring(const string& str)
 	return wstring(str.begin(), str.end());
 }
 
-string SuperString::C_strTostring(const char* str)
+string SuperString::C_stringTostring(const char* str)
 {
 	return string(str);
 }
 
 string SuperString::TCHARTostring(const TCHAR* str)
 {
-	return string(TCHARToC_str(str));
+	return string(TCHARToC_string(str));
 }
 
-char* SuperString::stringToC_str(const string& str)
+char* SuperString::stringToC_string(const string& str)
 {
 	int len = (int)str.length();
 	char* p = new char[len + 1];
@@ -32,7 +32,7 @@ char* SuperString::stringToC_str(const string& str)
 	return p;
 }
 
-char* SuperString::TCHARToC_str(const TCHAR* tchar)
+char* SuperString::TCHARToC_string(const TCHAR* tchar)
 {
 	int charCount = WideCharToMultiByte(CP_ACP, 0, tchar, -1, nullptr, 0, nullptr, nullptr);
 	char* result = new char[charCount];
@@ -40,7 +40,7 @@ char* SuperString::TCHARToC_str(const TCHAR* tchar)
 	return result;
 }
 
-TCHAR* SuperString::C_strToTCHAR(const char* c_str)
+TCHAR* SuperString::C_stringToTCHAR(const char* c_str)
 {
 	int charCount = MultiByteToWideChar(CP_ACP, 0, c_str, -1, nullptr, 0);
 	TCHAR* result = new TCHAR[charCount];
@@ -50,10 +50,10 @@ TCHAR* SuperString::C_strToTCHAR(const char* c_str)
 
 TCHAR* SuperString::stringToTCHAR(const string& str)
 {
-	return C_strToTCHAR(str.c_str());
+	return C_stringToTCHAR(str.c_str());
 }
 
-wchar_t* SuperString::C_strTowchar(const char* c_str)
+wchar_t* SuperString::C_stringTowchar(const char* c_str)
 {
 	int nLen = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, c_str, -1, NULL, 0);
 	if (nLen == 0)
@@ -65,7 +65,7 @@ wchar_t* SuperString::C_strTowchar(const char* c_str)
 	return pResult;
 }
 
-char* SuperString::wcharToC_str(const wchar_t* wstr)
+char* SuperString::wcharToC_string(const wchar_t* wstr)
 {
 	int charCount = WideCharToMultiByte(CP_ACP, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
 	char* result = new char[charCount];
@@ -77,55 +77,168 @@ char* SuperString::wcharToC_str(const wchar_t* wstr)
 
 string SuperString::To_std_string()
 {
-	return data;
+	return dataString;
 }
 
 wstring SuperString::To_std_wstring()
 {
-	return stringTowstring(data);
+	return stringTowstring(dataString);
 }
 
 TCHAR* SuperString::To_TCHAR_str()
 {
-	return stringToTCHAR(data);
+	return stringToTCHAR(dataString);
 }
 
-char* SuperString::To_C_str()
+char* SuperString::To_C_string()
 {
-	return stringToC_str(data);
+	return stringToC_string(dataString);
 }
 
 
 
-void SuperString::Append(const string& str)
+vector<SuperString> SuperString::Split(const string& delimiter)
 {
-	data += str;
+	vector<SuperString> tokens;
+	size_t pos = 0;
+	size_t lastPos = 0;
+	while ((pos = dataString.find(delimiter, lastPos)) != std::string::npos) {
+		tokens.push_back(dataString.substr(lastPos, pos - lastPos));
+		lastPos = pos + delimiter.length();
+	}
+	tokens.push_back(dataString.substr(lastPos));
+	return tokens;
 }
 
-void SuperString::Append(const wstring& str)
+vector<SuperString> SuperString::Split(const wstring& delimiter)
 {
-	data += wstringTostring(str);
+	vector<SuperString> tokens;
+	size_t pos = 0;
+	size_t lastPos = 0;
+	while ((pos = dataString.find(string(delimiter.begin(), delimiter.end()), lastPos)) != wstring::npos) 
+	{
+		tokens.push_back(dataString.substr(lastPos, pos - lastPos));
+		lastPos = pos + delimiter.length();
+	}
+	tokens.push_back(dataString.substr(lastPos));
+	return tokens;
 }
 
-void SuperString::Append(const TCHAR* str)
+vector<SuperString> SuperString::Split(const TCHAR* delimiter)
 {
-	data += TCHARTostring(str);
+	vector<SuperString> tokens;
+	size_t pos = 0;
+	size_t lastPos = 0;
+	while ((pos = dataString.find(TCHARTostring(delimiter), lastPos)) != wstring::npos)
+	{
+		tokens.push_back(dataString.substr(lastPos, pos - lastPos));
+		lastPos = pos + TCHARTostring(delimiter).length();
+	}
+	tokens.push_back(dataString.substr(lastPos));
+	return tokens;
 }
 
-void SuperString::Append(const char* str)
+vector<SuperString> SuperString::Split(const char* delimiter)
 {
-	data += str;
+	vector<SuperString> tokens;
+	size_t pos = 0;
+	size_t lastPos = 0;
+	while ((pos = dataString.find(delimiter, lastPos)) != wstring::npos)
+	{
+		tokens.push_back(dataString.substr(lastPos, pos - lastPos));
+		lastPos = pos + C_stringTostring(delimiter).length();
+	}
+	tokens.push_back(dataString.substr(lastPos));
+	return tokens;
 }
 
-void SuperString::Append(SuperString& superStr)
+vector<SuperString> SuperString::Split(const char delimiter)
 {
-	data += superStr.To_std_string();
+	vector<SuperString> tokens;
+	string token;
+	istringstream tokenStream(dataString);
+	while (std::getline(tokenStream, token, delimiter)) {
+		tokens.push_back(token);
+	}
+	return tokens;
+}
+
+vector<SuperString> SuperString::Split(SuperString& delimiter)
+{
+	vector<SuperString> tokens;
+	size_t pos = 0;
+	size_t lastPos = 0;
+	while ((pos = dataString.find(delimiter.To_std_string(), lastPos)) != std::string::npos) {
+		tokens.push_back(dataString.substr(lastPos, pos - lastPos));
+		lastPos = pos + delimiter.To_std_string().length();
+	}
+	tokens.push_back(dataString.substr(lastPos));
+	return tokens;
+}
+
+
+
+
+bool SuperString::Contains(const string& value)
+{
+	return dataString.find(value) != string::npos;
+}
+
+bool SuperString::Contains(const wstring& value)
+{
+	return dataString.find(wstringTostring(value)) != string::npos;
+}
+
+bool SuperString::Contains(const TCHAR* value)
+{
+	return dataString.find(TCHARTostring(value)) != string::npos;
+}
+
+bool SuperString::Contains(const char* value)
+{
+	return dataString.find(value) != string::npos;
+}
+
+bool SuperString::Contains(const char value)
+{
+	return dataString.find(value) != string::npos;
+}
+
+bool SuperString::Contains(SuperString& value)
+{
+	return dataString.find(value.To_std_string()) != string::npos;
+}
+
+
+SuperString SuperString::Append(const string& str)
+{
+	return SuperString(dataString + str);
+}
+
+SuperString SuperString::Append(const wstring& str)
+{
+	return SuperString(dataString + wstringTostring(str));
+}
+
+SuperString SuperString::Append(const TCHAR* str)
+{
+	return SuperString(dataString + TCHARTostring(str));
+}
+
+SuperString SuperString::Append(const char* str)
+{
+	return SuperString(dataString + str);
+}
+
+SuperString SuperString::Append(SuperString& superStr)
+{
+	return SuperString(dataString + superStr.To_std_string());
 }
 
 
 
 ostream& operator<<(ostream& os, const SuperString& superStr)
 {
-	os << superStr.data;
+	os << superStr.dataString;
 	return os;
 }
